@@ -40,7 +40,7 @@
   :parent-project {:coords [puppetlabs/clj-parent "1.6.0"]
                    :inherit [:managed-dependencies]}
 
-  :dependencies [[org.clojure/clojure]
+  :dependencies [[org.clojure/clojure "1.9.0"]
 
                  [slingshot]
                  [circleci/clj-yaml]
@@ -87,8 +87,12 @@
 
                  ;; dependencies for clojurescript dashboard
                  [puppetlabs/cljs-dashboard-widgets]
-                 [org.clojure/clojurescript]
-                 [cljs-http "0.1.36"]]
+                 [org.clojure/clojurescript "1.9.946"]
+                 [cljs-http "0.1.36"]
+
+                 ;; temporary for testing clojure 1.9
+                 [org.clojure/core.async "0.4.474"]
+                 ]
 
   :main puppetlabs.trapperkeeper.main
 
@@ -159,7 +163,7 @@
                                    [ch.qos.logback/logback-classic]
 
                                    ;; dependencies for cljs development
-                                   [leiningen "2.7.1" :exclusions [org.codehaus.plexus/plexus-utils
+                                   [leiningen "2.8.1" :exclusions [org.codehaus.plexus/plexus-utils
                                                                    org.clojure/tools.cli]]
                                    [cljsbuild ~cljsbuild-version]
 
