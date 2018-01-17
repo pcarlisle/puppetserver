@@ -92,6 +92,7 @@
 
                  ;; temporary for testing clojure 1.9
                  [org.clojure/core.async "0.4.474"]
+                 [org.tcrawley/dynapath "0.2.5"]
                  ]
 
   :main puppetlabs.trapperkeeper.main
@@ -235,7 +236,10 @@
   :jvm-opts ["-Djruby.logger.class=com.puppetlabs.jruby_utils.jruby.Slf4jLogger"
              "-XX:+UseG1GC"
              ~(str "-Xms" (heap-size "1G" "min"))
-             ~(str "-Xmx" (heap-size "2G" "max"))]
+             ~(str "-Xmx" (heap-size "2G" "max"))
+             "-XX:+IgnoreUnrecognizedVMOptions"
+             "--add-modules" "java.xml.bind"
+             "--add-modules" "java.xml.ws"]
 
   :repl-options {:init-ns dev-tools}
 
