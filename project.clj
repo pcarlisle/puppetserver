@@ -65,7 +65,7 @@
                  [net.logstash.logback/logstash-logback-encoder]
 
                  [puppetlabs/jruby-utils "1.0.0"]
-                 [puppetlabs/jruby-deps ~jruby-1_7-version]
+                 [puppetlabs/jruby-deps ~jruby-9k-version]
 
                  ;; JRuby 1.7.x and trapperkeeper (via core.async) both bring in
                  ;; asm dependencies.  Deferring to clj-parent to resolve the version.
@@ -125,8 +125,7 @@
                 :resources {:dir "tmp/ezbake-resources"}
                 :config-dir "ezbake/config"
                 :system-config-dir "ezbake/system-config"
-                :additional-uberjars [[puppetlabs/jruby-deps ~jruby-9k-version]
-                                      [puppetlabs/jruby-deps ~jruby-1_7-version]]}
+                :additional-uberjars [[puppetlabs/jruby-deps ~jruby-9k-version]]}
 
   :deploy-repositories [["releases" ~(deploy-info "https://artifactory.delivery.puppetlabs.net/artifactory/clojure-releases__local/")]
                         ["snapshots" ~(deploy-info "https://artifactory.delivery.puppetlabs.net/artifactory/clojure-snapshots__local/")]]
