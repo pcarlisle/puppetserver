@@ -1,6 +1,5 @@
 (def ps-version "5.2.1-master-SNAPSHOT")
-(def jruby-1_7-version "1.7.27-1")
-(def jruby-9k-version "9.1.15.0-2")
+(def jruby-version "9.1.15.0-2")
 
 (defn deploy-info
   [url]
@@ -66,7 +65,7 @@
                  [net.logstash.logback/logstash-logback-encoder]
 
                  [puppetlabs/jruby-utils "1.1.0"]
-                 [puppetlabs/jruby-deps ~jruby-1_7-version]
+                 [puppetlabs/jruby-deps ~jruby-version]
 
                  ;; JRuby 1.7.x and trapperkeeper (via core.async) both bring in
                  ;; asm dependencies.  Deferring to clj-parent to resolve the version.
@@ -121,8 +120,7 @@
                 :resources {:dir "tmp/ezbake-resources"}
                 :config-dir "ezbake/config"
                 :system-config-dir "ezbake/system-config"
-                :additional-uberjars [[puppetlabs/jruby-deps ~jruby-9k-version]
-                                      [puppetlabs/jruby-deps ~jruby-1_7-version]]}
+                :additional-uberjars [[puppetlabs/jruby-deps ~jruby-version]]}
 
   :deploy-repositories [["releases" ~(deploy-info "https://artifactory.delivery.puppetlabs.net/artifactory/clojure-releases__local/")]
                         ["snapshots" ~(deploy-info "https://artifactory.delivery.puppetlabs.net/artifactory/clojure-snapshots__local/")]]
@@ -178,7 +176,7 @@
                    :cljsbuild {:builds {:app {:source-paths ["dev-cljs"]
                                               :compiler {:main "puppetlabs.puppetserver.dashboard.dev"
                                                          :source-map true}}}}
-                   ; SERVER-332, enable SSLv3 for unit tests that exercise SSLv3
+                                        ; SERVER-332, enable SSLv3 for unit tests that exercise SSLv3
                    :jvm-opts      ["-Djava.security.properties=./dev-resources/java.security"]}
 
              :testutils {:source-paths ^:replace ["test/unit" "test/integration"]}
@@ -192,7 +190,7 @@
                     :jvm-opts ["-Dclojure.core.async.pool-size=50"]
                     }
 
-             :ezbake {:dependencies ^:replace [;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             :ezbake {:dependencies ^:replace [ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                                ;; NOTE: we need to explicitly pass in `nil` values
                                                ;; for the version numbers here in order to correctly
                                                ;; inherit the versions from our parent project.
@@ -203,7 +201,7 @@
                                                ;; https://github.com/technomancy/leiningen/issues/2216
                                                ;; Hopefully we can remove those `nil`s (if we care)
                                                ;; and this comment when lein 2.7.2 is available.
-                                               ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
                                                ;; we need to explicitly pull in our parent project's
                                                ;; clojure version here, because without it, lein
@@ -218,8 +216,7 @@
              :uberjar {:aot [puppetlabs.trapperkeeper.main]
                        :dependencies [[puppetlabs/trapperkeeper-webserver-jetty9 nil]]}
              :ci {:plugins [[lein-pprint "1.1.1"]]}
-             :voom {:plugins [[lein-voom "0.1.0-20150115_230705-gd96d771" :exclusions [org.clojure/clojure]]]}
-             :jruby9k {:dependencies [[puppetlabs/jruby-deps ~jruby-9k-version]]}}
+             :voom {:plugins [[lein-voom "0.1.0-20150115_230705-gd96d771" :exclusions [org.clojure/clojure]]]}}
 
   :test-selectors {:integration :integration
                    :unit (complement :integration)}
