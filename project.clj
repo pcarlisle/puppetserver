@@ -231,7 +231,10 @@
   :jvm-opts ["-Djruby.logger.class=com.puppetlabs.jruby_utils.jruby.Slf4jLogger"
              "-XX:+UseG1GC"
              ~(str "-Xms" (heap-size "1G" "min"))
-             ~(str "-Xmx" (heap-size "2G" "max"))]
+             ~(str "-Xmx" (heap-size "2G" "max"))
+             "-XX:+IgnoreUnrecognizedVMOptions"
+             "--add-modules" "java.xml.bind"
+             "--add-modules" "java.xml.ws"]
 
   :repl-options {:init-ns dev-tools}
 
