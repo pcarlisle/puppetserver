@@ -1,0 +1,29 @@
+version: '3'
+services:
+  master:
+    build:
+      dockerfile: Dockerfile.source
+      context: .
+    hostname: master.docker
+    ports:
+      - 8140:8140
+    volumes:
+      - ~/.m2:/root/.m2
+      - ~/.puppetlabs/opt/server/data/puppetserver/vendored-jruby-gems:/opt/puppetlabs/server/data/puppetserver/jruby-gems
+      - ./ezbake/system-config/services.d/bootstrap.cfg:/etc/puppetlabs/puppetserver/bootstrap.cfg
+      - ./docker/conf.d:/etc/puppetlabs/puppetserver/conf.d
+      - ./ezbake/config/services.d:/etc/puppetlabs/puppetserver/services.d
+      - ./ruby/puppet:/puppet
+      - ./ruby/hiera:/hiera
+      - ./ruby/facter:/facter
+      - ./code:/etc/puppetlabs/code
+  agent:
+    image: vault
+    hostname: vault.docker
+    volumes:
+      - ./ssl/certs/ca.pem:/vault/config/ca.pem
+      - ./ssl/certs/vault.docker.pem:/vault/config/cert.pem
+      - ./ssl/private_keys/vault.docker.pem:/vault/config/private_key.pem
+    depends_on:
+      - master
+    command: ["server"]
