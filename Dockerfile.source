@@ -3,14 +3,22 @@ WORKDIR /usr/src/app
 
 VOLUME ["/puppet", "/hiera", "/facter", "/etc/puppetlabs/puppetserver/conf.d", "/opt/puppetlabs/server/data/puppetserver/jruby-gems"]
 
-COPY . /usr/src/app/
+RUN apk add --no-cache make && \
+    apk add --no-cache java-jffi-native libc6-compat shadow
+
+COPY project.clj /usr/src/app/
+
+RUN lein deps
+
+COPY . /usr/src/app
+
+RUN lein gem install --install-dir /opt/puppetlabs/server/data/puppetserver/jruby-gems/opt/puppetlabs/server/data/puppetserver/jruby-gems \
+    --no-ri --no-rdoc $(cat resources/ext/build-scripts/jruby-gem-list.txt | sed 's/ /:/')
 
 COPY docker/puppetserver-standalone/logback.xml /etc/puppetlabs/puppetserver/
 COPY docker/puppetserver-standalone/request-logging.xml /etc/puppetlabs/puppetserver/
 
-RUN apk add --no-cache make && \
-    apk add --no-cache java-jffi-native libc6-compat shadow && \
-    mkdir -p /var/run/puppetlabs/puppetserver /var/log/puppetlabs/puppetserver
+RUN mkdir -p /var/run/puppetlabs/puppetserver /var/log/puppetlabs/puppetserver
 
 EXPOSE 8140
 
