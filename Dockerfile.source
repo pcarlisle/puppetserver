@@ -1,8 +1,6 @@
 FROM clojure:lein-alpine
 WORKDIR /usr/src/app
 
-VOLUME ["/puppet", "/hiera", "/facter", "/etc/puppetlabs/puppetserver/conf.d", "/opt/puppetlabs/server/data/puppetserver/jruby-gems"]
-
 RUN apk add --no-cache make && \
     apk add --no-cache java-jffi-native libc6-compat shadow
 
@@ -10,15 +8,21 @@ COPY project.clj /usr/src/app/
 
 RUN lein deps
 
+COPY docker/conf.d /etc/puppetlabs/puppetserver/conf.d
+COPY ezbake/config/services.d /etc/puppetlabs/puppetserver/services.d
+COPY ezbake/system-config/services.d/bootstrap.cfg /etc/puppetlabs/puppetserver/bootstrap.cfg
+
 COPY . /usr/src/app
 
-RUN lein gem install --install-dir /opt/puppetlabs/server/data/puppetserver/jruby-gems/opt/puppetlabs/server/data/puppetserver/jruby-gems \
+RUN lein gem install --install-dir /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems \
     --no-ri --no-rdoc $(cat resources/ext/build-scripts/jruby-gem-list.txt | sed 's/ /:/')
 
 COPY docker/puppetserver-standalone/logback.xml /etc/puppetlabs/puppetserver/
 COPY docker/puppetserver-standalone/request-logging.xml /etc/puppetlabs/puppetserver/
 
 RUN mkdir -p /var/run/puppetlabs/puppetserver /var/log/puppetlabs/puppetserver
+
+VOLUME ["/puppet", "/hiera", "/facter", "/etc/puppetlabs/puppetserver/conf.d"]
 
 EXPOSE 8140
 
