@@ -1,41 +1,41 @@
-FROM clojure:lein
+FROM clojure:lein-alpine
 WORKDIR /usr/src/app
-COPY . /usr/src/app/
-ENV EZBAKE_NODEPLOY=1
-ENV EZBAKE_ALLOW_UNREPRODUCIBLE_BUILDS=1
-ENV MOCK=''
-ENV COW=base-stretch-i386.cow
-RUN apt-get update && \
-    apt-get install -y make ruby ruby-dev build-essential && \
-    git config --global user.email "root@localhost" && \
-    git config --global user.name "Docker Puppet Builder" && \
-    gem install fpm && \
-    lein with-profile ezbake ezbake local-build
 
-FROM openjdk:8-slim
-COPY --from=0 /usr/src/app/output /packages
+RUN apk add --no-cache make && \
+    apk add --no-cache java-jffi-native libc6-compat shadow
 
-ENV DUMB_INIT_VERSION="1.2.1"
-ENV PATH=/opt/puppetlabs/server/bin:/opt/puppetlabs/puppet/bin:/opt/puppetlabs/bin:$PATH
+COPY project.clj /usr/src/app/
 
-RUN apt-get update && \
-    apt-get install -y wget && \
-    wget http://apt.puppetlabs.com/puppet6-nightly/puppet6-nightly-release-stretch.deb && \
-    wget https://github.com/Yelp/dumb-init/releases/download/v"$DUMB_INIT_VERSION"/dumb-init_"$DUMB_INIT_VERSION"_amd64.deb && \
-    dpkg -i puppet6-nightly-release-stretch.deb && \
-    dpkg -i dumb-init_"$DUMB_INIT_VERSION"_amd64.deb && \
-    apt-get update && \
-    apt install -y /packages/deb/stretch/puppet6/puppet*
+RUN lein deps
 
-# COPY puppetserver /etc/default/puppetserver
-# COPY logback.xml /etc/puppetlabs/puppetserver/
-# COPY request-logging.xml /etc/puppetlabs/puppetserver/
 
-RUN puppet config set autosign true --section master
-RUN chown -R puppet:puppet /etc/puppetlabs/puppet/ssl
-RUN chown -R puppet:puppet /opt/puppetlabs/server/data/puppetserver/
+COPY . /usr/src/app
+
+RUN lein gem install --install-dir /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems \
+    --no-ri --no-rdoc $(cat resources/ext/build-scripts/jruby-gem-list.txt | sed 's/ /:/')
+
+RUN lein uberjar
+
+
+FROM openjdk:8-jre-alpine
+
+COPY docker/conf.d /etc/puppetlabs/puppetserver/conf.d
+COPY ezbake/config/services.d /etc/puppetlabs/puppetserver/services.d
+COPY ezbake/system-config/services.d/bootstrap.cfg /etc/puppetlabs/puppetserver/bootstrap.cfg
+COPY docker/puppetserver-standalone/logback.xml /etc/puppetlabs/puppetserver/
+COPY docker/puppetserver-standalone/request-logging.xml /etc/puppetlabs/puppetserver/
+
+RUN mkdir -p /var/run/puppetlabs/puppetserver /var/log/puppetlabs/puppetserver
+
+COPY --from=0 /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems
+COPY --from=0 /usr/src/app/target/puppet-server-release.jar /
+
+COPY ruby/puppet/lib /puppet/lib
+COPY ruby/facter/lib /facter/lib
+COPY ruby/hiera/lib /hiera/lib
+
+RUN apk add --no-cache java-jffi-native libc6-compat shadow
 
 EXPOSE 8140
 
-ENTRYPOINT ["dumb-init","/opt/puppetlabs/bin/puppetserver"]
-CMD ["foreground" ]
+CMD java -cp /puppet-server-release.jar clojure.main -m puppetlabs.trapperkeeper.main -b /etc/puppetlabs/puppetserver/bootstrap.cfg,/etc/puppetlabs/puppetserver/services.d -c /etc/puppetlabs/puppetserver/conf.d
