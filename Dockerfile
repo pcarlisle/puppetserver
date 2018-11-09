@@ -1,4 +1,15 @@
-FROM clojure:lein-alpine as build
+FROM openjdk:12-alpine as lein
+
+ENV LEIN_ROOT true
+ENV PATH /usr/local/bin:$PATH
+
+RUN apk add --no-cache bash && \
+  mkdir -p /usr/local/bin && \
+  wget -O /usr/local/bin/lein https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && \
+  chmod +x /usr/local/bin/lein && \
+  lein
+
+FROM lein as build
 WORKDIR /usr/src/app
 
 RUN apk add --no-cache make && \
@@ -8,8 +19,9 @@ COPY project.clj /usr/src/app/
 
 RUN lein deps
 
-
 COPY . /usr/src/app
+
+ENV JAVA_OPTS "--add-modules=java.xml.bind,java.xml.ws"
 
 RUN lein gem install --install-dir /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems \
     --no-ri --no-rdoc $(cat resources/ext/build-scripts/jruby-gem-list.txt | sed 's/ /:/')
