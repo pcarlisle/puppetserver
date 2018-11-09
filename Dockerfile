@@ -1,4 +1,4 @@
-FROM clojure:lein-alpine
+FROM clojure:lein-alpine as build
 WORKDIR /usr/src/app
 
 RUN apk add --no-cache make && \
@@ -16,8 +16,22 @@ RUN lein gem install --install-dir /opt/puppetlabs/server/data/puppetserver/vend
 
 RUN lein uberjar
 
+FROM puppet-agent:local as agent
 
 FROM openjdk:8-jre-alpine
+
+RUN apk add --no-cache \
+    curl \
+    shadow \
+    yaml-cpp \
+    boost \
+    boost-program_options \
+    boost-system \
+    boost-filesystem \
+    boost-regex \
+    boost-thread \
+    java-jffi-native \
+    libc6-compat
 
 COPY docker/conf.d /etc/puppetlabs/puppetserver/conf.d
 COPY ezbake/config/services.d /etc/puppetlabs/puppetserver/services.d
@@ -27,14 +41,15 @@ COPY docker/puppetserver-standalone/request-logging.xml /etc/puppetlabs/puppetse
 
 RUN mkdir -p /var/run/puppetlabs/puppetserver /var/log/puppetlabs/puppetserver
 
-COPY --from=0 /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems
-COPY --from=0 /usr/src/app/target/puppet-server-release.jar /
+COPY --from=build /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems
+COPY --from=build /usr/src/app/target/puppet-server-release.jar /
 
-COPY ruby/puppet/lib /puppet/lib
-COPY ruby/facter/lib /facter/lib
-COPY ruby/hiera/lib /hiera/lib
-
-RUN apk add --no-cache java-jffi-native libc6-compat shadow
+COPY --from=agent /usr/lib/ruby/vendor_ruby /usr/lib/ruby/vendor_ruby
+COPY --from=agent /etc/puppetlabs /etc/puppetlabs
+COPY --from=agent /usr/local/bin /usr/local/bin
+COPY --from=agent /usr/local/lib/site_ruby /usr/local/lib/site_ruby
+COPY --from=agent /usr/local/lib/libfacter* /usr/local/lib/
+COPY --from=agent /usr/local/share /usr/local/share
 
 EXPOSE 8140
 
