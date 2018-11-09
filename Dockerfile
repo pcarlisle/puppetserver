@@ -21,8 +21,6 @@ RUN lein deps
 
 COPY . /usr/src/app
 
-ENV JAVA_OPTS "--add-modules=java.xml.bind,java.xml.ws"
-
 RUN lein gem install --install-dir /opt/puppetlabs/server/data/puppetserver/vendored-jruby-gems \
     --no-ri --no-rdoc $(cat resources/ext/build-scripts/jruby-gem-list.txt | sed 's/ /:/')
 
