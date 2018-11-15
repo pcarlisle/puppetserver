@@ -7,3 +7,5 @@ ext/packaging
 junit
 log
 tmp
+Dockerfile
+resources/ext

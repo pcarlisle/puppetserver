@@ -1,4 +1,4 @@
-FROM openjdk:12-alpine as lein
+FROM openjdk:8-jdk-alpine as lein
 
 ENV LEIN_ROOT true
 ENV PATH /usr/local/bin:$PATH
@@ -58,8 +58,9 @@ COPY --from=agent /usr/lib/ruby/vendor_ruby /usr/lib/ruby/vendor_ruby
 COPY --from=agent /etc/puppetlabs /etc/puppetlabs
 COPY --from=agent /usr/local/bin /usr/local/bin
 COPY --from=agent /usr/local/lib/site_ruby /usr/local/lib/site_ruby
-COPY --from=agent /usr/local/lib/libfacter* /usr/local/lib/
+COPY --from=agent /usr/local/lib/libfacter.so.* /usr/local/lib/
 COPY --from=agent /usr/local/share /usr/local/share
+RUN ln -s /usr/local/lib/libfacter.so.* /usr/local/lib/libfacter.so
 
 EXPOSE 8140
 
