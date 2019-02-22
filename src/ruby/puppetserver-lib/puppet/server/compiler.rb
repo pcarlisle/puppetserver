@@ -14,10 +14,39 @@ module Puppet
         node = create_node(processed_hash)
 
         catalog = Puppet::Parser::Compiler.compile(node, processed_hash['job_id'])
+
+        maybe_save(processed_hash, node.facts, catalog)
+
         catalog.to_data_hash
       end
 
       private
+
+      def maybe_save(processed_hash, facts, catalog)
+        nodename = processed_hash['certname']
+        persist = processed_hash['persistence']
+        options = processed_hash.
+                    slice("environment", "transaction_id").
+                    map {|key, val| [key.intern, val] }.to_h
+
+        if persist['facts']
+          if Puppet::Node::Facts.indirection.terminus_class.to_s == "puppetdb"
+            Puppet.override({trusted_information: processed_hash['trusted_facts']}) do
+              Puppet::Node::Facts.indirection.save(facts)
+            end
+          else
+            raise Puppet::Error, "PuppetDB not configured, not saving Facts"
+          end
+        end
+
+        if persist['catalog']
+          if Puppet::Resource::Catalog.indirection.cache_class.to_s == "puppetdb"
+            Puppet::Resource::Catalog.indirection.save(catalog)
+          else
+            raise Puppet::Error, "PuppetDB not configured, not saving Catalog"
+          end
+        end
+      end
 
       def create_node(request_data)
         # We need an environment to talk to PDB
@@ -68,7 +97,7 @@ module Puppet
 
       def extract_facts(request_data)
         if request_data['facts'].nil?
-          if Puppet[:storeconfigs] == true
+          if Puppet::Node::Facts.indirection.terminus.to_s == "puppetdb"
             facts = get_facts_from_pdb(request_data['certname'], request_data['environment'])
           else
             raise(Puppet::Error, "PuppetDB not configured, please provide facts with your catalog request.")
