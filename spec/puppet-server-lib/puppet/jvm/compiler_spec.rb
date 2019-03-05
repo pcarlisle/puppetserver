@@ -49,7 +49,7 @@ describe Puppet::Server::Compiler do
       before(:each) do
         FileUtils.mkdir_p(File.join(Puppet[:environmentpath], environment))
 
-        Puppet::Node.indirection.expects(:find).returns(
+        expect(Puppet::Node.indirection).to receive(:find).and_return(
           Puppet::Node.new(certname, environment: 'production')
         )
       end
